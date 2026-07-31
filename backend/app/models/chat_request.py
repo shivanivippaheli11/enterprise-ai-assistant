@@ -1,22 +1,11 @@
-class ChatRequest:
-    def __init__(
-        self,
-        user_id: str,
-        session_id: str,
-        message: str,
-    ):
-        # validations
+from pydantic import BaseModel, Field
 
-        if not user_id.strip():
-            raise ValueError("User ID cannot be empty.")
 
-        if not session_id.strip():
-            raise ValueError("Session ID cannot be empty.")
+class ChatRequest(BaseModel):
+    """
+    Represents a chat request sent by the employee.
+    """
 
-        if not message.strip():
-            raise ValueError("Message cannot be empty.")
-
-        
-        self.user_id = user_id
-        self.session_id = session_id
-        self.message = message
+    user_id: str = Field(..., min_length=1)
+    session_id: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1)
