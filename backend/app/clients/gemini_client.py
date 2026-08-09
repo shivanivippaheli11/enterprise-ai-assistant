@@ -1,6 +1,6 @@
 from google import genai
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL
 
 
 class GeminiClient:
@@ -10,11 +10,14 @@ class GeminiClient:
             api_key=GEMINI_API_KEY
         )
 
-    
     def generate_response(self, prompt: str) -> str:
         response = self.client.models.generate_content(
-            model="gemini-3.6-flash",
+            model=GEMINI_MODEL,
             contents=prompt,
+            config={
+                "temperature": 0.2,
+                "max_output_tokens": 300,
+            },
         )
 
         return response.text
