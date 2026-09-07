@@ -1,11 +1,15 @@
+from app.repositories.conversation_repository import ConversationRepository
+
+
 class MemoryService:
     """
-    Stores conversation history for each session.
+    Manages conversation memory using persistent storage.
     """
 
     def __init__(self):
-        # Dictionary to store chat history
-        self.conversations = {}
+        self.repository = ConversationRepository(
+            "data/conversations.db"
+        )
 
     def add_message(
         self,
@@ -14,17 +18,13 @@ class MemoryService:
         message: str
     ):
         """
-        Add a message to a conversation.
+        Store a conversation message.
         """
 
-        if session_id not in self.conversations:
-            self.conversations[session_id] = []
-
-        self.conversations[session_id].append(
-            {
-                "role": role,
-                "message": message
-            }
+        self.repository.add_message(
+            session_id,
+            role,
+            message
         )
 
     def get_history(
@@ -32,7 +32,9 @@ class MemoryService:
         session_id: str
     ):
         """
-        Return conversation history.
+        Retrieve conversation history.
         """
 
-        return self.conversations.get(session_id, [])
+        return self.repository.get_history(
+            session_id
+        )
