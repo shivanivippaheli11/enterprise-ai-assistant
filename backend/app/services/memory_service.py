@@ -1,3 +1,4 @@
+from app.config import DATABASE_PATH
 from app.repositories.conversation_repository import ConversationRepository
 
 
@@ -8,7 +9,7 @@ class MemoryService:
 
     def __init__(self):
         self.repository = ConversationRepository(
-            "data/conversations.db"
+            DATABASE_PATH
         )
 
     def add_message(
