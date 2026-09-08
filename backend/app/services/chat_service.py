@@ -7,6 +7,7 @@ from app.models.chat_request import ChatRequest
 from app.models.chat_response import ChatResponse
 from app.prompt.prompt_builder import PromptBuilder
 from app.services.memory_service import MemoryService
+from app.tools.tool_executor import ToolExecutor
 from app.utils.logger import logger
 from app.utils.request_id import generate_request_id
 
@@ -18,6 +19,7 @@ class ChatService:
         self.gemini_client = GeminiClient()
         self.prompt_builder = PromptBuilder()
         self.memory_service = MemoryService()
+        self.tool_executor = ToolExecutor()
 
     def process_message(
         self,
@@ -46,8 +48,7 @@ class ChatService:
             f"{len(history)} previous messages from memory."
         )
 
-        # Build enterprise prompt using previous history
-        # and the current question
+        # Build enterprise prompt
         final_prompt = self.prompt_builder.build_prompt(
             history,
             request.message
@@ -62,17 +63,21 @@ class ChatService:
             f"{len(final_prompt)} characters."
         )
 
-        # Call Gemini API
+        # -------------------------------------------------
+        # STEP 1: Ask Gemini whether a tool is required
+        # -------------------------------------------------
+
         logger.info(
-            f"[{request_id}] Calling Gemini API..."
+            f"[{request_id}] Calling Gemini with tools..."
         )
 
         start_time = time.perf_counter()
 
         try:
-            # Generate AI response
-            ai_response = self.gemini_client.generate_response(
-                final_prompt
+            model_response = (
+                self.gemini_client.generate_response_with_tools(
+                    final_prompt
+                )
             )
 
         except Exception as error:
@@ -87,7 +92,6 @@ class ChatService:
                 f"after {end_time - start_time:.2f} seconds."
             )
 
-            # Return an error response
             return ChatResponse(
                 response_id=response_id,
                 session_id=request.session_id,
@@ -99,29 +103,109 @@ class ChatService:
                 timestamp=datetime.now().isoformat()
             )
 
-        # Stop timer after successful Gemini response
         end_time = time.perf_counter()
 
         logger.info(
-            f"[{request_id}] Received response from Gemini "
-            f"in {end_time - start_time:.2f} seconds."
+            f"[{request_id}] Gemini responded in "
+            f"{end_time - start_time:.2f} seconds."
         )
 
-        # Store user message after successful AI processing
+        # -------------------------------------------------
+        # STEP 2: Check whether Gemini requested a tool
+        # -------------------------------------------------
+
+        if model_response.function_calls:
+
+            function_call = model_response.function_calls[0]
+
+            logger.info(
+                f"[{request_id}] Gemini requested tool: "
+                f"{function_call.name}"
+            )
+
+            logger.info(
+                f"[{request_id}] Tool arguments: "
+                f"{function_call.args}"
+            )
+
+            # -------------------------------------------------
+            # STEP 3: Execute the requested tool
+            # -------------------------------------------------
+
+            tool_result = self.tool_executor.execute(
+                function_call.name,
+                function_call.args
+            )
+
+            logger.info(
+                f"[{request_id}] Tool execution completed."
+            )
+
+            logger.info(
+                f"[{request_id}] Tool result: "
+                f"{tool_result}"
+            )
+
+            # -------------------------------------------------
+            # STEP 4: Send tool result back to Gemini
+            # -------------------------------------------------
+
+            try:
+                ai_response = (
+                    self.gemini_client.generate_final_response(
+                        final_prompt,
+                        model_response,
+                        tool_result
+                    )
+                )
+
+            except Exception as error:
+                logger.error(
+                    f"[{request_id}] Gemini final response failed: "
+                    f"{error}"
+                )
+
+                return ChatResponse(
+                    response_id=response_id,
+                    session_id=request.session_id,
+                    response=(
+                        "The AI service is temporarily unavailable. "
+                        "Please try again later."
+                    ),
+                    status="ERROR",
+                    timestamp=datetime.now().isoformat()
+                )
+
+        else:
+
+            # Gemini did not request a tool.
+            # Use its normal response.
+            ai_response = model_response.text
+
+            logger.info(
+                f"[{request_id}] No tool was requested."
+            )
+
+        # -------------------------------------------------
+        # STEP 5: Store conversation
+        # -------------------------------------------------
+
         self.memory_service.add_message(
             request.session_id,
             "user",
             request.message
         )
 
-        # Store AI response in memory
         self.memory_service.add_message(
             request.session_id,
             "assistant",
             ai_response
         )
 
-        # Build successful response
+        # -------------------------------------------------
+        # STEP 6: Build successful response
+        # -------------------------------------------------
+
         response = ChatResponse(
             response_id=response_id,
             session_id=request.session_id,
