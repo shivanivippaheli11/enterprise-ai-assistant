@@ -1,0 +1,15 @@
+.chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 24px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+}
+
+.chat-input button {
+  padding: 10px 20px;
+  cursor: pointer;
+}
