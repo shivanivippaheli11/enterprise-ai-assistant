@@ -6,9 +6,7 @@ import { useChat } from "../../hooks/useChat";
 
 import "./ChatPage.css";
 
-
 function ChatPage() {
-
   const {
     messages,
     input,
@@ -18,42 +16,44 @@ function ChatPage() {
     error,
   } = useChat();
 
-
   return (
     <main className="chat-page">
 
-      <ChatHeader />
+      <div className="chat-container">
 
+        <ChatHeader />
 
-      <MessageList
-        messages={messages}
-      />
+        <section className="chat-content">
 
+          <MessageList
+            messages={messages}
+          />
 
-      {isLoading && (
-        <p>
-          AI Assistant is thinking...
-        </p>
-      )}
+          {isLoading && (
+            <div className="chat-status">
+              AI Assistant is thinking...
+            </div>
+          )}
 
+          {error && (
+            <div className="chat-error">
+              {error}
+            </div>
+          )}
 
-      {error && (
-        <p>
-          {error}
-        </p>
-      )}
+        </section>
 
+        <ChatInput
+          input={input}
+          onInputChange={setInput}
+          onSend={sendMessage}
+          isLoading={isLoading}
+        />
 
-      <ChatInput
-        input={input}
-        onInputChange={setInput}
-        onSend={sendMessage}
-        isLoading={isLoading}
-      />
+      </div>
 
     </main>
   );
 }
-
 
 export default ChatPage;

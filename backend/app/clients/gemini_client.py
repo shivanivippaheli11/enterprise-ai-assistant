@@ -1,5 +1,3 @@
-import httpx
-
 from google import genai
 from google.genai import types
 
@@ -11,16 +9,7 @@ class GeminiClient:
 
     def __init__(self):
 
-        # Force Gemini API traffic through IPv4.
-        # The local network has broken IPv6 connectivity.
-        ipv4_transport = httpx.HTTPTransport(
-            local_address="0.0.0.0"
-        )
-
         http_options = types.HttpOptions(
-            client_args={
-                "transport": ipv4_transport
-            },
             timeout=60000,
             retry_options=types.HttpRetryOptions(
                 attempts=1
@@ -106,8 +95,6 @@ class GeminiClient:
             ]
         )
 
-        # Preserve Gemini's original model response,
-        # including the function call information.
         function_call_content = (
             model_response.candidates[0].content
         )
