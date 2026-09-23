@@ -2,34 +2,34 @@ import type { ChatMessage } from "../../../types/chat";
 
 import "./MessageBubble.css";
 
-
 interface MessageBubbleProps {
   message: ChatMessage;
 }
 
-
 function MessageBubble({
   message,
 }: MessageBubbleProps) {
+  const isUser = message.role === "user";
 
   return (
     <article
-      className={`message-bubble ${message.role}`}
+      className={`message-bubble-wrapper ${
+        isUser ? "user-message" : "assistant-message"
+      }`}
     >
+      <div className="message-bubble">
 
-      <strong>
-        {message.role === "user"
-          ? "You"
-          : "AI Assistant"}
-      </strong>
+        <span className="message-sender">
+          {isUser ? "You" : "AI Assistant"}
+        </span>
 
-      <p>
-        {message.message}
-      </p>
+        <p className="message-text">
+          {message.message}
+        </p>
 
+      </div>
     </article>
   );
 }
-
 
 export default MessageBubble;

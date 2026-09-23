@@ -7,11 +7,13 @@ import { useChat } from "../../hooks/useChat";
 import "./ChatPage.css";
 
 function ChatPage() {
+
   const {
     messages,
     input,
     setInput,
     sendMessage,
+    retryLastMessage,
     isLoading,
     error,
   } = useChat();
@@ -30,14 +32,39 @@ function ChatPage() {
           />
 
           {isLoading && (
-            <div className="chat-status">
-              AI Assistant is thinking...
+            <div className="typing-indicator-wrapper">
+
+              <div className="typing-indicator">
+
+                <span className="typing-label">
+                  AI Assistant
+                </span>
+
+                <div className="typing-dots">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+
+              </div>
+
             </div>
           )}
 
           {error && (
             <div className="chat-error">
-              {error}
+
+              <span>
+                {error}
+              </span>
+
+              <button
+                onClick={retryLastMessage}
+                disabled={isLoading}
+              >
+                Retry
+              </button>
+
             </div>
           )}
 

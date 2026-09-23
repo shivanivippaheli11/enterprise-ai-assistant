@@ -3,7 +3,6 @@ import { useState } from "react";
 import type { ChatMessage } from "../types/chat";
 import { sendChatMessage } from "../services/chatService";
 
-
 export function useChat() {
 
   const [messages, setMessages] =
@@ -18,35 +17,42 @@ export function useChat() {
   const [error, setError] =
     useState<string | null>(null);
 
+  const [lastFailedMessage, setLastFailedMessage] =
+    useState<string | null>(null);
 
-  const sendMessage = async () => {
+  const sendMessage = async (
+    messageOverride?: string,
+    isRetry: boolean = false
+  ) => {
 
-    if (!input.trim()) {
+    const messageToSend =
+      messageOverride ?? input;
+
+    if (!messageToSend.trim()) {
       return;
     }
 
+    const currentInput = messageToSend;
 
-    const currentInput = input;
+    if (!isRetry) {
 
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        message: currentInput,
+      };
 
-    const userMessage: ChatMessage = {
-      role: "user",
-      message: currentInput,
-    };
+      setMessages((previousMessages) => [
+        ...previousMessages,
+        userMessage,
+      ]);
 
-
-    setMessages((previousMessages) => [
-      ...previousMessages,
-      userMessage,
-    ]);
-
-
-    setInput("");
+      setInput("");
+    }
 
     setError(null);
 
     setIsLoading(true);
-
 
     try {
 
@@ -56,17 +62,18 @@ export function useChat() {
         message: currentInput,
       });
 
-
       const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
         role: "assistant",
         message: response.response,
       };
-
 
       setMessages((previousMessages) => [
         ...previousMessages,
         assistantMessage,
       ]);
+
+      setLastFailedMessage(null);
 
     } catch (error) {
 
@@ -79,6 +86,8 @@ export function useChat() {
         "Unable to get a response from the AI assistant. Please try again."
       );
 
+      setLastFailedMessage(currentInput);
+
     } finally {
 
       setIsLoading(false);
@@ -86,12 +95,24 @@ export function useChat() {
     }
   };
 
+  const retryLastMessage = () => {
+
+    if (!lastFailedMessage) {
+      return;
+    }
+
+    sendMessage(
+      lastFailedMessage,
+      true
+    );
+  };
 
   return {
     messages,
     input,
     setInput,
     sendMessage,
+    retryLastMessage,
     isLoading,
     error,
   };
