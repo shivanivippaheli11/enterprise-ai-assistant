@@ -1,13 +1,11 @@
 import "./ChatInput.css";
 
-
 interface ChatInputProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
   isLoading: boolean;
 }
-
 
 function ChatInput({
   input,
@@ -28,6 +26,14 @@ function ChatInput({
     }
   };
 
+  const handleSendClick = () => {
+
+    if (isLoading) {
+      return;
+    }
+
+    onSend();
+  };
 
   return (
     <section className="chat-input">
@@ -47,9 +53,9 @@ function ChatInput({
         disabled={isLoading}
       />
 
-
       <button
-        onClick={onSend}
+        type="button"
+        onClick={handleSendClick}
         disabled={isLoading}
       >
         {isLoading ? "Sending..." : "Send"}
@@ -58,6 +64,5 @@ function ChatInput({
     </section>
   );
 }
-
 
 export default ChatInput;

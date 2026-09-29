@@ -4,6 +4,11 @@ export interface ChatMessage {
   message: string;
 }
 
+export interface ChatHistoryMessage {
+  role: "user" | "assistant";
+  message: string;
+}
+
 export interface ChatRequest {
   user_id: string;
   session_id: string;

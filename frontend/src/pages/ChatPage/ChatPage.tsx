@@ -14,6 +14,7 @@ function ChatPage() {
     setInput,
     sendMessage,
     retryLastMessage,
+    startNewChat,
     isLoading,
     error,
   } = useChat();
@@ -23,7 +24,9 @@ function ChatPage() {
 
       <div className="chat-container">
 
-        <ChatHeader />
+        <ChatHeader
+          onNewChat={startNewChat}
+        />
 
         <section className="chat-content">
 

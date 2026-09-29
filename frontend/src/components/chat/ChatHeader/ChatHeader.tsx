@@ -1,22 +1,40 @@
 import "./ChatHeader.css";
 
+interface ChatHeaderProps {
+  onNewChat: () => void;
+}
 
-function ChatHeader() {
+function ChatHeader({
+  onNewChat,
+}: ChatHeaderProps) {
 
   return (
     <header className="chat-header">
 
-      <h1>
-        Enterprise AI Assistant
-      </h1>
+      <div className="chat-header-content">
 
-      <p>
-        Ask questions and get assistance from your enterprise AI assistant.
-      </p>
+        <div>
+          <h1>
+            Enterprise AI Assistant
+          </h1>
+
+          <p>
+            Ask questions and get assistance from your enterprise AI assistant.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="new-chat-button"
+          onClick={onNewChat}
+        >
+          New Chat
+        </button>
+
+      </div>
 
     </header>
   );
 }
-
 
 export default ChatHeader;

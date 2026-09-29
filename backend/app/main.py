@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.utils.logger import logger
 from app.routers.chat_router import router as chat_router
+from app.routers.history_router import router as history_router
 
 
 logger.info("Application started successfully.")
@@ -54,3 +55,4 @@ def read_root():
 
 
 app.include_router(chat_router)
+app.include_router(history_router)

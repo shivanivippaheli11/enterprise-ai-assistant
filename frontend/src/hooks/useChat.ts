@@ -1,7 +1,19 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import type { ChatMessage } from "../types/chat";
-import { sendChatMessage } from "../services/chatService";
+
+import {
+  sendChatMessage,
+  getChatHistory,
+} from "../services/chatService";
+
+import {
+  getSessionId,
+  createNewSession,
+} from "../utils/session";
 
 export function useChat() {
 
@@ -19,6 +31,34 @@ export function useChat() {
 
   const [lastFailedMessage, setLastFailedMessage] =
     useState<string | null>(null);
+
+  useEffect(() => {
+
+    const loadHistory = async () => {
+
+      const sessionId =
+        getSessionId();
+
+      try {
+
+        const history =
+          await getChatHistory(sessionId);
+
+        setMessages(history);
+
+      } catch (error) {
+
+        console.error(
+          "Failed to load conversation history:",
+          error
+        );
+
+      }
+    };
+
+    loadHistory();
+
+  }, []);
 
   const sendMessage = async (
     messageOverride?: string,
@@ -58,7 +98,7 @@ export function useChat() {
 
       const response = await sendChatMessage({
         user_id: "USER001",
-        session_id: "FRONTEND001",
+        session_id: getSessionId(),
         message: currentInput,
       });
 
@@ -107,12 +147,26 @@ export function useChat() {
     );
   };
 
+  const startNewChat = () => {
+
+    createNewSession();
+
+    setMessages([]);
+
+    setInput("");
+
+    setError(null);
+
+    setLastFailedMessage(null);
+  };
+
   return {
     messages,
     input,
     setInput,
     sendMessage,
     retryLastMessage,
+    startNewChat,
     isLoading,
     error,
   };
