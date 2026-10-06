@@ -7,6 +7,7 @@ from app.models.chat_request import ChatRequest
 from app.models.chat_response import ChatResponse
 from app.prompt.prompt_builder import PromptBuilder
 from app.services.memory_service import MemoryService
+from app.services.session_service import SessionService
 from app.tools.tool_executor import ToolExecutor
 from app.utils.logger import logger
 from app.utils.request_id import generate_request_id
@@ -15,30 +16,32 @@ from app.utils.request_id import generate_request_id
 class ChatService:
 
     def __init__(self):
-        # Initialize dependencies only once
         self.gemini_client = GeminiClient()
         self.prompt_builder = PromptBuilder()
         self.memory_service = MemoryService()
+        self.session_service = SessionService()
         self.tool_executor = ToolExecutor()
 
     def process_message(
         self,
-        request: ChatRequest
+        request: ChatRequest,
+        user_id: str,
     ) -> ChatResponse:
 
-        # Generate a unique request ID
         request_id = generate_request_id()
-
-        # Generate a unique response ID
         response_id = f"RESP-{uuid.uuid4().hex[:8].upper()}"
 
-        # Log incoming request
-        logger.info(
-            f"[{request_id}] Received chat request from user "
-            f"'{request.user_id}' for session '{request.session_id}'."
+        self.session_service.create_session(
+            session_id=request.session_id,
+            user_id=user_id,
         )
 
-        # Get previous conversation history
+        logger.info(
+            f"[{request_id}] Received chat request from "
+            f"user '{user_id}' for session "
+            f"'{request.session_id}'."
+        )
+
         history = self.memory_service.get_history(
             request.session_id
         )
@@ -48,7 +51,6 @@ class ChatService:
             f"{len(history)} previous messages from memory."
         )
 
-        # Build enterprise prompt
         final_prompt = self.prompt_builder.build_prompt(
             history,
             request.message
@@ -62,10 +64,6 @@ class ChatService:
             f"[{request_id}] Prompt length: "
             f"{len(final_prompt)} characters."
         )
-
-        # -------------------------------------------------
-        # STEP 1: Ask Gemini whether a tool is required
-        # -------------------------------------------------
 
         logger.info(
             f"[{request_id}] Calling Gemini with tools..."
@@ -110,10 +108,6 @@ class ChatService:
             f"{end_time - start_time:.2f} seconds."
         )
 
-        # -------------------------------------------------
-        # STEP 2: Check whether Gemini requested a tool
-        # -------------------------------------------------
-
         if model_response.function_calls:
 
             function_call = model_response.function_calls[0]
@@ -128,10 +122,6 @@ class ChatService:
                 f"{function_call.args}"
             )
 
-            # -------------------------------------------------
-            # STEP 3: Execute the requested tool
-            # -------------------------------------------------
-
             tool_result = self.tool_executor.execute(
                 function_call.name,
                 function_call.args
@@ -145,10 +135,6 @@ class ChatService:
                 f"[{request_id}] Tool result: "
                 f"{tool_result}"
             )
-
-            # -------------------------------------------------
-            # STEP 4: Send tool result back to Gemini
-            # -------------------------------------------------
 
             try:
                 ai_response = (
@@ -177,18 +163,11 @@ class ChatService:
                 )
 
         else:
-
-            # Gemini did not request a tool.
-            # Use its normal response.
             ai_response = model_response.text
 
             logger.info(
                 f"[{request_id}] No tool was requested."
             )
-
-        # -------------------------------------------------
-        # STEP 5: Store conversation
-        # -------------------------------------------------
 
         self.memory_service.add_message(
             request.session_id,
@@ -202,10 +181,6 @@ class ChatService:
             ai_response
         )
 
-        # -------------------------------------------------
-        # STEP 6: Build successful response
-        # -------------------------------------------------
-
         response = ChatResponse(
             response_id=response_id,
             session_id=request.session_id,
@@ -215,7 +190,8 @@ class ChatService:
         )
 
         logger.info(
-            f"[{request_id}] Returning chat response."
+            f"[{request_id}] Returning chat response "
+            f"for user '{user_id}'."
         )
 
         return response

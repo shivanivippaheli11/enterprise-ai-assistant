@@ -1,11 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ChatRequest(BaseModel):
     """
-    Represents a chat request sent by the employee.
+    Represents a chat request from an authenticated user.
     """
 
-    user_id: str = Field(..., min_length=1)
-    session_id: str = Field(..., min_length=1)
-    message: str = Field(..., min_length=1)
+    session_id: str
+    message: str

@@ -14,6 +14,9 @@ DATABASE_PATH = os.getenv(
     "DATABASE_PATH",
     "data/conversations.db"
 )
+JWT_SECRET_KEY = os.getenv(
+    "JWT_SECRET_KEY"
+)
 
 
 if not GEMINI_API_KEY:
@@ -26,3 +29,4 @@ if not GEMINI_MODEL:
     raise ValueError(
         "GEMINI_MODEL is not configured."
     )
+
